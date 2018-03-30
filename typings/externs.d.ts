@@ -70,10 +70,14 @@ declare global {
     }
 
     export interface ConfigPass {
+      recordTrace?: boolean;
+      useThrottling?: boolean;
       pauseAfterLoadMs?: number;
       networkQuietThresholdMs?: number;
       cpuQuietThresholdMs?: number;
-      useThrottling?: boolean;
+      blockedUrlPatterns?: string[];
+      blankPage?: string;
+      blankDuration?: string;
     }
 
     export interface Results {

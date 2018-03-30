@@ -6,7 +6,6 @@
 'use strict';
 
 module.exports = {
-  extends: 'lighthouse:default',
   settings: {
     skipAudits: [
       // disabled for now because they are too slow

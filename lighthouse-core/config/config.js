@@ -6,9 +6,10 @@
 // @ts-nocheck
 'use strict';
 
-const defaultConfigPath = './default.js';
-const defaultConfig = require('./default.js');
+const defaultConfigPath = './default-config.js';
+const defaultConfig = require('./default-config.js');
 const fullConfig = require('./full-config.js');
+const constants = require('./constants');
 
 const log = require('lighthouse-logger');
 const path = require('path');
@@ -308,12 +309,12 @@ class Config {
       configJSON.audits = Array.from(inputConfig.audits);
     }
 
-    // Extend the default or full config if specified
+    // Extend the default or full config
     if (configJSON.extends === 'lighthouse:full') {
       const explodedFullConfig = Config.extendConfigJSON(deepClone(defaultConfig),
           deepClone(fullConfig));
       configJSON = Config.extendConfigJSON(explodedFullConfig, configJSON);
-    } else if (configJSON.extends) {
+    } else {
       configJSON = Config.extendConfigJSON(deepClone(defaultConfig), configJSON);
     }
 
@@ -359,10 +360,13 @@ class Config {
     if (extendJSON.passes) {
       extendJSON.passes.forEach(pass => {
         const basePass = baseJSON.passes.find(candidate => candidate.passName === pass.passName);
+        // ensure that all new passes have the default pass config properties
+        const defaultPassConfig = deepClone(constants.defaultPassConfig);
+
         if (!basePass || !pass.passName) {
-          baseJSON.passes.push(pass);
+          baseJSON.passes.push(merge(defaultPassConfig, pass));
         } else {
-          merge(basePass, pass);
+          merge(merge(defaultPassConfig, basePass), pass);
         }
       });
 

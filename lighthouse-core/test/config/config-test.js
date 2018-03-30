@@ -8,7 +8,7 @@
 const Config = require('../../config/config');
 const assert = require('assert');
 const path = require('path');
-const defaultConfig = require('../../config/default.js');
+const defaultConfig = require('../../config/default-config.js');
 const log = require('lighthouse-logger');
 const Gatherer = require('../../gather/gatherers/gatherer');
 const Audit = require('../../audits/audit');
@@ -138,7 +138,7 @@ describe('Config', () => {
   });
 
   it('throws on a non-absolute config path', () => {
-    const configPath = '../../config/default.js';
+    const configPath = '../../config/default-config.js';
 
     return assert.throws(_ => new Config({
       audits: [],
