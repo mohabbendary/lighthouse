@@ -54,6 +54,8 @@ if (cliFlags.configPath) {
   // Resolve the config file path relative to where cli was called.
   cliFlags.configPath = path.resolve(process.cwd(), cliFlags.configPath);
   config = /** @type {!LH.Config} */ (require(cliFlags.configPath));
+} else if (cliFlags.perf) {
+  cliFlags.onlyCategories = ['performance'];
 } else if (cliFlags.mixedContent) {
   config = /** @type {!LH.Config} */ (mixedContentConfig);
   // The mixed-content audits require headless Chrome (https://crbug.com/764505).

@@ -24,24 +24,25 @@ const throttling = {
   },
 };
 
+const defaultSettings = {
+  maxWaitForLoad: 45 * 1000,
+  throttlingMethod: 'devtools',
+  throttling: throttling.mobile3G,
+};
+
+const defaultPassConfig = {
+  recordTrace: false,
+  useThrottling: false,
+  pauseAfterLoadMs: 0,
+  networkQuietThresholdMs: 0,
+  cpuQuietThresholdMs: 0,
+  blockedUrlPatterns: [],
+  blankPage: 'about:blank',
+  blankDuration: 300,
+};
+
 module.exports = {
   throttling,
-  defaultSettings: {
-    maxWaitForLoad: 45 * 1000,
-    throttlingMethod: 'devtools',
-    throttling: throttling.mobile3G,
-  },
-  defaultPassConfig: {
-    recordTrace: false,
-    useThrottling: false,
-    pauseAfterLoadMs: 0,
-    networkQuietThresholdMs: 0,
-    cpuQuietThresholdMs: 0,
-    blockedUrlPatterns: [],
-    blankPage: 'about:blank',
-    blankDuration: 300,
-  },
-  defaultAuditOptions: {
-
-  },
+  defaultSettings,
+  defaultPassConfig,
 };
