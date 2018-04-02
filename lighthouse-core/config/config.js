@@ -11,6 +11,7 @@ const defaultConfig = require('./default-config.js');
 const fullConfig = require('./full-config.js');
 const constants = require('./constants');
 
+const isEqual = require('lodash.isequal');
 const log = require('lighthouse-logger');
 const path = require('path');
 const Audit = require('../audits/audit');
@@ -260,7 +261,12 @@ function merge(base, extension) {
     return extension;
   } else if (Array.isArray(extension)) {
     if (!Array.isArray(base)) throw new TypeError(`Expected array but got ${typeof base}`);
-    return base.concat(extension);
+    const merged = [...base];
+    extension.forEach(item => {
+      if (!merged.some(candidate => isEqual(candidate, item))) merged.push(item);
+    });
+
+    return merged;
   } else if (typeof extension === 'object') {
     if (typeof base !== 'object') throw new TypeError(`Expected object but got ${typeof base}`);
     Object.keys(extension).forEach(key => {
