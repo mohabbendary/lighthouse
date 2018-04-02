@@ -5,4 +5,8 @@
  */
 'use strict';
 
-module.exports = {settings: {onlyCategories: ['performance']}};
+module.exports = {
+  settings: {
+    onlyCategories: ['performance'],
+  },
+};

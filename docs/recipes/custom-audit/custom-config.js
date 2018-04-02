@@ -6,8 +6,7 @@
 'use strict';
 
 module.exports = {
-  // 1. Run your custom tests along with all the default Lighthouse tests.
-  extends: 'lighthouse:default',
+  // 1. Lighthouse default config will be extended automatically, so you'll run both
 
   // 2. Add gatherer to the default Lighthouse load ('pass') of the page.
   passes: [{

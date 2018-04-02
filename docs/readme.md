@@ -39,7 +39,7 @@ Many modules consuming Lighthouse are only interested in the performance numbers
 You can limit the audits you run to a particular category or set of audits.
 
 ```js
-const perfConfig = {settings: {onlyCategories: ['performance']}};
+const perfConfig = require('lighthouse/lighthouse-core/config/perf-config.js');
 // ...
 launchChromeAndRunLighthouse(url, flags, perfConfig).then( // ...
 ```
