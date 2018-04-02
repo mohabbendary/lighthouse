@@ -35,11 +35,9 @@ const NodeState = {
 
 class Simulator {
   /**
-   * @param {Node} graph
    * @param {LH.Gatherer.Simulation.Options} [options]
    */
-  constructor(graph, options) {
-    this._graph = graph;
+  constructor(options) {
     this._options = Object.assign(
       {
         rtt: DEFAULT_RTT,
@@ -60,6 +58,7 @@ class Simulator {
     this._cpuSlowdownMultiplier = this._options.cpuSlowdownMultiplier;
     this._layoutTaskMultiplier = this._cpuSlowdownMultiplier * this._options.layoutTaskMultiplier;
 
+    // Properties reset on every `.simulate` call but duplicated here for type checking
     this._nodeTiming = new Map();
     this._numberInProgressByType = new Map();
     this._nodes = {};
@@ -68,12 +67,12 @@ class Simulator {
   }
 
   /**
-   *
+   * @param {Node} graph
    */
-  _initializeConnectionPool() {
+  _initializeConnectionPool(graph) {
     /** @type {LH.NetworkRequest[]} */
     const records = [];
-    this._graph.getRootNode().traverse(node => {
+    graph.getRootNode().traverse(node => {
       if (node.type === Node.TYPES.NETWORK) {
         records.push(/** @type {NetworkNode} */ (node).record);
       }
@@ -288,18 +287,19 @@ class Simulator {
 
   /**
    * Estimates the time taken to process all of the graph's nodes.
+   * @param {Node} graph
    * @return {LH.Gatherer.Simulation.Result}
    */
-  simulate() {
+  simulate(graph) {
     // initialize the necessary data containers
-    this._initializeConnectionPool();
+    this._initializeConnectionPool(graph);
     this._initializeAuxiliaryData();
 
     const nodesNotReadyToStart = this._nodes[NodeState.NotReadyToStart];
     const nodesReadyToStart = this._nodes[NodeState.ReadyToStart];
     const nodesInProgress = this._nodes[NodeState.InProgress];
 
-    const rootNode = this._graph.getRootNode();
+    const rootNode = graph.getRootNode();
     rootNode.traverse(node => nodesNotReadyToStart.add(node));
 
     let totalElapsedTime = 0;
