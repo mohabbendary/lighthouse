@@ -15,6 +15,8 @@ const runLighthouse = require('./run').runLighthouse;
 
 const log = require('lighthouse-logger');
 // @ts-ignore
+const perfConfig = require('../lighthouse-core/config/perf-config.js');
+// @ts-ignore
 const mixedContentConfig = require('../lighthouse-core/config/mixed-content-config.js');
 // @ts-ignore
 const pkg = require('../package.json');
@@ -55,7 +57,7 @@ if (cliFlags.configPath) {
   cliFlags.configPath = path.resolve(process.cwd(), cliFlags.configPath);
   config = /** @type {!LH.Config} */ (require(cliFlags.configPath));
 } else if (cliFlags.perf) {
-  cliFlags.onlyCategories = ['performance'];
+  config = /** @type {!LH.Config} */ (perfConfig);
 } else if (cliFlags.mixedContent) {
   config = /** @type {!LH.Config} */ (mixedContentConfig);
   // The mixed-content audits require headless Chrome (https://crbug.com/764505).
