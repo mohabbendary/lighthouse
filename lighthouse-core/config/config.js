@@ -117,26 +117,6 @@ function validatePasses(passes, audits) {
       }
     });
   });
-
-  // Passes must have unique `passName`s. Throw otherwise.
-  const usedNames = new Set();
-  let defaultUsed = false;
-  passes.forEach((pass, index) => {
-    let passName = pass.passName;
-    if (!passName) {
-      if (defaultUsed) {
-        throw new Error(`passes[${index}] requires a passName`);
-      }
-
-      passName = Audit.DEFAULT_PASS;
-      defaultUsed = true;
-    }
-
-    if (usedNames.has(passName)) {
-      throw new Error(`Passes must have unique names (repeated passName: ${passName}.`);
-    }
-    usedNames.add(passName);
-  });
 }
 
 function validateCategories(categories, audits, groups) {
@@ -261,7 +241,7 @@ function merge(base, extension) {
     return extension;
   } else if (Array.isArray(extension)) {
     if (!Array.isArray(base)) throw new TypeError(`Expected array but got ${typeof base}`);
-    const merged = [...base];
+    const merged = base.slice();
     extension.forEach(item => {
       if (!merged.some(candidate => isDeepEqual(candidate, item))) merged.push(item);
     });
@@ -279,7 +259,21 @@ function merge(base, extension) {
 }
 
 function deepClone(json) {
-  return JSON.parse(JSON.stringify(json));
+  const cloned = JSON.parse(JSON.stringify(json));
+
+  // Copy arrays that could contain plugins to allow for programmatic
+  // injection of plugins.
+  if (Array.isArray(json.passes)) {
+    cloned.passes.forEach((pass, i) => {
+      pass.gatherers = Array.from(json.passes[i].gatherers);
+    });
+  }
+
+  if (Array.isArray(json.audits)) {
+    cloned.audits = Array.from(json.audits);
+  }
+
+  return cloned;
 }
 
 class Config {
@@ -301,19 +295,7 @@ class Config {
     }
 
     // We don't want to mutate the original config object
-    const inputConfig = configJSON;
     configJSON = deepClone(configJSON);
-
-    // Copy arrays that could contain plugins to allow for programmatic
-    // injection of plugins.
-    if (Array.isArray(inputConfig.passes)) {
-      configJSON.passes.forEach((pass, i) => {
-        pass.gatherers = Array.from(inputConfig.passes[i].gatherers);
-      });
-    }
-    if (Array.isArray(inputConfig.audits)) {
-      configJSON.audits = Array.from(inputConfig.audits);
-    }
 
     // Extend the default or full config
     if (configJSON.extends === 'lighthouse:full') {
@@ -365,14 +347,17 @@ class Config {
   static extendConfigJSON(baseJSON, extendJSON) {
     if (extendJSON.passes) {
       extendJSON.passes.forEach(pass => {
-        const basePass = baseJSON.passes.find(candidate => candidate.passName === pass.passName);
         // ensure that all new passes have the default pass config properties
         const defaultPassConfig = deepClone(constants.defaultPassConfig);
+        const passName = pass.passName || defaultPassConfig.passName;
+        const basePass = baseJSON.passes.find(candidate => candidate.passName === passName);
 
-        if (!basePass || !pass.passName) {
+        if (!basePass) {
           baseJSON.passes.push(merge(defaultPassConfig, pass));
         } else {
-          merge(merge(defaultPassConfig, basePass), pass);
+          const indexOfBasePass = baseJSON.passes.indexOf(basePass);
+          const basePassWithDefaults = merge(defaultPassConfig, basePass);
+          baseJSON.passes[indexOfBasePass] = merge(basePassWithDefaults, pass);
         }
       });
 
@@ -428,6 +413,8 @@ class Config {
           return {path: gatherer, options: {}};
         } else if (typeof gatherer === 'function') {
           return {implementation: gatherer, options: {}};
+        } else if (gatherer && typeof gatherer.beforePass === 'function') {
+          return {instance: gatherer, options: {}};
         } else {
           return gatherer;
         }

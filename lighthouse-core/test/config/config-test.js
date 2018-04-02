@@ -35,20 +35,24 @@ describe('Config', () => {
     class MyAudit extends Audit {
       static get meta() {
         return {
-          name: 'MyAudit',
+          name: 'my-audit',
           description: 'My audit',
           failureDescription: 'My failing audit',
           helpText: '.',
-          requiredArtifacts: [],
+          requiredArtifacts: ['MyGatherer'],
         };
       }
       static audit() {}
     }
     const config = {
+      settings: {onlyAudits: ['my-audit']},
       passes: [{
         gatherers: [MyGatherer],
       }],
       audits: [MyAudit],
+      categories: {
+        myCategory: {audits: [{id: 'my-audit', weight: 100}]},
+      },
     };
     const newConfig = new Config(config);
     assert.equal(MyGatherer, newConfig.passes[0].gatherers[0].implementation);
@@ -61,33 +65,38 @@ describe('Config', () => {
     assert.equal(origConfig.audits.length, config.audits.length);
   });
 
-  it('warns when a passName is used twice', () => {
+  it('merges duplicate pass names', () => {
     const unlikelyPassName = 'unlikelyPassName';
     const configJson = {
       passes: [{
         passName: unlikelyPassName,
-        gatherers: [],
+        gatherers: ['url'],
       }, {
         passName: unlikelyPassName,
-        gatherers: [],
+        gatherers: ['viewport-dimensions'],
       }],
-      audits: [],
     };
 
-    assert.throws(_ => new Config(configJson), /unique/);
+    const config = new Config(configJson);
+    const matchedPasses = config.passes.filter(pass => pass.passName === unlikelyPassName);
+    assert.equal(matchedPasses.length, 1);
+    assert.equal(matchedPasses[0].gatherers.length, 2);
   });
 
-  it('warns when traced twice with no passNames specified', () => {
+  it('defaults passName to defaultPass', () => {
+    class MyGatherer extends Gatherer {}
     const configJson = {
       passes: [{
-        gatherers: [],
-      }, {
-        gatherers: [],
+        gatherers: [MyGatherer],
       }],
-      audits: [],
     };
 
-    assert.throws(_ => new Config(configJson), /requires a passName/);
+    const config = new Config(configJson);
+    const defaultPass = config.passes.find(pass => pass.passName === 'defaultPass');
+    assert.ok(
+      defaultPass.gatherers.find(gatherer => gatherer.implementation === MyGatherer),
+      'defaultPass should have contained extra gatherer'
+    );
   });
 
   it('throws for unknown gatherers', () => {
@@ -121,7 +130,7 @@ describe('Config', () => {
 
   it('expands audits', () => {
     const config = new Config({
-      audits: ['user-timings'],
+      settings: {onlyAudits: ['user-timings']},
     });
 
     assert.ok(Array.isArray(config.audits));
@@ -315,6 +324,7 @@ describe('Config', () => {
   it('filters the config w/ skipAudits', () => {
     const config = new Config({
       settings: {
+        onlyCategories: ['needed-category', 'other-category'],
         skipAudits: ['first-meaningful-paint'],
       },
       passes: [
@@ -675,7 +685,12 @@ describe('Config', () => {
   describe('#requireGatherers', () => {
     function loadGatherer(gathererEntry) {
       const config = new Config({passes: [{gatherers: [gathererEntry]}]});
-      return config.passes[0].gatherers[0];
+      return config.passes[0].gatherers.find(gatherer => {
+        return gatherer === gathererEntry ||
+          gatherer.instance === gathererEntry ||
+          gatherer.implementation === gathererEntry ||
+          gatherer.path === gathererEntry;
+      });
     }
 
     it('loads a core gatherer', () => {
@@ -695,9 +710,10 @@ describe('Config', () => {
       const config = new Config({
         passes: [{gatherers: ['../fixtures/valid-custom-gatherer']}],
       }, {configPath: __filename});
-      const gatherer = config.passes[0].gatherers[0];
+      const gatherer = config.passes[0].gatherers
+        .find(gatherer => gatherer.instance.name === 'CustomGatherer');
 
-      assert.equal(gatherer.instance.name, 'CustomGatherer');
+      assert.ok(gatherer, 'did not load config with relative path');
       assert.equal(typeof gatherer.instance.beforePass, 'function');
     });
 

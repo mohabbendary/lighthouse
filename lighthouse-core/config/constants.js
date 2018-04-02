@@ -31,6 +31,7 @@ const defaultSettings = {
 };
 
 const defaultPassConfig = {
+  passName: 'defaultPass',
   recordTrace: false,
   useThrottling: false,
   pauseAfterLoadMs: 0,
@@ -39,6 +40,7 @@ const defaultPassConfig = {
   blockedUrlPatterns: [],
   blankPage: 'about:blank',
   blankDuration: 300,
+  gatherers: [],
 };
 
 module.exports = {

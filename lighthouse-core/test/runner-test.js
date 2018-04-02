@@ -108,12 +108,7 @@ describe('Runner', () => {
   it('expands gatherers', () => {
     const url = 'https://example.com';
     const config = new Config({
-      passes: [{
-        gatherers: ['viewport-dimensions'],
-      }],
-      audits: [
-        'content-width',
-      ],
+      settings: {onlyAudits: ['content-width']},
     });
 
     return Runner.run(null, {url, config, driverMock}).then(_ => {
@@ -122,30 +117,10 @@ describe('Runner', () => {
     });
   });
 
-
-  it('rejects when given neither passes nor artifacts', () => {
-    const url = 'https://example.com';
-    const config = new Config({
-      audits: [
-        'content-width',
-      ],
-    });
-
-    return Runner.run(null, {url, config, driverMock})
-      .then(_ => {
-        assert.ok(false);
-      }, err => {
-        assert.ok(/No browser artifacts are either/.test(err.message));
-      });
-  });
-
   it('accepts existing artifacts', () => {
     const url = 'https://example.com';
     const config = new Config({
-      audits: [
-        'content-width',
-      ],
-
+      settings: {onlyAudits: ['content-width']},
       artifacts: {
         ViewportDimensions: {},
       },
@@ -214,32 +189,6 @@ describe('Runner', () => {
       assert.equal(audits['user-timings'].displayValue, 2);
       assert.equal(audits['user-timings'].rawValue, false);
     });
-  });
-
-  it('rejects when given an invalid trace artifact', () => {
-    const url = 'https://example.com';
-    const config = new Config({
-      passes: [{
-        recordTrace: true,
-        gatherers: [],
-      }],
-    });
-
-    // Arrange for driver to return bad trace.
-    const badTraceDriver = Object.assign({}, driverMock, {
-      endTrace() {
-        return Promise.resolve({
-          traceEvents: 'not an array',
-        });
-      },
-    });
-
-    return Runner.run({}, {url, config, driverMock: badTraceDriver})
-      .then(_ => {
-        assert.ok(false);
-      }, _ => {
-        assert.ok(true);
-      });
   });
 
   describe('Bad required artifact handling', () => {
@@ -394,31 +343,10 @@ describe('Runner', () => {
     });
   });
 
-  it('rejects when not given audits to run (and not -G)', () => {
-    const url = 'https://example.com';
-    const config = new Config({
-      passes: [{
-        gatherers: ['viewport-dimensions'],
-      }],
-    });
-
-    return Runner.run(null, {url, config, driverMock})
-      .then(_ => {
-        assert.ok(false);
-      }, err => {
-        assert.ok(/No audits to evaluate/.test(err.message));
-      });
-  });
-
   it('returns data even if no config categories are provided', () => {
     const url = 'https://example.com';
     const config = new Config({
-      passes: [{
-        gatherers: ['viewport-dimensions'],
-      }],
-      audits: [
-        'content-width',
-      ],
+      settings: {onlyAudits: ['content-width']},
     });
 
     return Runner.run(null, {url, config, driverMock}).then(results => {
@@ -434,12 +362,7 @@ describe('Runner', () => {
   it('returns reportCategories', () => {
     const url = 'https://example.com';
     const config = new Config({
-      passes: [{
-        gatherers: ['viewport-dimensions'],
-      }],
-      audits: [
-        'content-width',
-      ],
+      settings: {onlyCategories: ['category']},
       categories: {
         category: {
           name: 'Category',
@@ -502,10 +425,7 @@ describe('Runner', () => {
     const url = 'https://example.com';
     const ViewportDimensions = {innerHeight: 10, innerWidth: 10};
     const config = new Config({
-      audits: [
-        'content-width',
-      ],
-
+      settings: {onlyAudits: ['content-width']},
       artifacts: {ViewportDimensions},
     });
 
@@ -521,14 +441,7 @@ describe('Runner', () => {
   it('results include artifacts and computedArtifacts when given passes and audits', () => {
     const url = 'https://example.com';
     const config = new Config({
-      passes: [{
-        passName: 'firstPass',
-        gatherers: ['url', 'viewport-dimensions'],
-      }],
-
-      audits: [
-        'content-width',
-      ],
+      settings: {onlyAudits: ['content-width', 'redirects']},
     });
 
     return Runner.run(null, {url, config, driverMock}).then(results => {
@@ -541,7 +454,7 @@ describe('Runner', () => {
 
       // Verify a computed artifact
       const artifacts = results.artifacts;
-      const devtoolsLogs = artifacts.devtoolsLogs['firstPass'];
+      const devtoolsLogs = artifacts.devtoolsLogs.defaultPass;
       assert.equal(Array.isArray(devtoolsLogs), true, 'devtoolsLogs is not an array');
 
       return artifacts.requestCriticalRequestChains(devtoolsLogs).then(chains => {
